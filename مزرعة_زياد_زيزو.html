@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>مزرعة زياد زيزو 🌱🇪🇬</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#dff4d2;font-family:Arial,sans-serif;color:#183b20}
+.app{max-width:520px;margin:auto;min-height:100vh;background:#f8fff3}
+header{background:linear-gradient(135deg,#147a35,#31a852);color:#fff;padding:20px;border-radius:0 0 24px 24px;box-shadow:0 5px 20px #0002}
+h1{margin:0 0 8px;font-size:28px}.sub{opacity:.9}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:15px}.stat{background:#ffffff22;border-radius:13px;padding:10px;text-align:center}.stat b{display:block;font-size:19px}
+main{padding:16px}.field{background:#9a642f;border:8px solid #6b431f;border-radius:20px;padding:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:9px;box-shadow:inset 0 0 0 2px #c28a4b}
+.plot{height:105px;background:#815126;border:2px solid #633b19;border-radius:13px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:28px;cursor:pointer;position:relative;overflow:hidden}
+.plot small{font-size:12px;color:#ffe9c7;margin-top:4px}.plot.growing{background:#4f8d35}.plot.ready{background:#65a83d}.plot.ready:after{content:"✂️";position:absolute;top:5px;left:5px;font-size:17px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}button{border:0;border-radius:14px;padding:14px;font-size:17px;font-weight:bold;cursor:pointer;background:#1c7c3a;color:#fff;box-shadow:0 3px 0 #0e5225}button:disabled{background:#aaa;box-shadow:none}
+.shop{margin-top:18px;background:#fff;border-radius:18px;padding:16px;box-shadow:0 4px 18px #0001}.shop h2{margin-top:0}.price{color:#9a5b14;font-weight:bold}
+.log{margin-top:12px;background:#eef9e8;padding:12px;border-radius:12px;font-size:14px;min-height:45px}
+.tip{text-align:center;color:#55745b;font-size:13px;margin:16px 0}
+</style>
+</head>
+<body><div class="app">
+<header><h1>🌱 مزرعة زياد زيزو 🌱🇪🇬</h1><div class="sub">مزرعة زياد زيزو — ازرع، اسقِ، احصد ووسّع أرضك.</div>
+<div class="stats"><div class="stat">💰<b id="money">100</b> جنيه</div><div class="stat">🌾<b id="hay">0</b> وحدة</div><div class="stat">🚜<b id="acres">1</b> فدان</div></div></header>
+<main>
+<div class="field" id="field"></div>
+<div class="controls"><button id="plant">🌱 ازرع برسيم</button><button id="water">💧 اسقِ الأرض</button><button id="harvest">✂️ احصد البرسيم</button><button id="sell">💰 بيع المحصول</button></div>
+<div class="shop"><h2>🚜 تطوير المزرعة</h2><p>شراء فدان إضافي: <span class="price" id="landPrice">150</span> جنيه</p><button id="buy">شراء فدان</button><p>ترقية الري: <span class="price">250</span> جنيه — تقلل وقت النمو.</p><button id="upgrade">💦 ترقية الري</button></div>
+<div class="log" id="log">ابدأ بزراعة البرسيم في إحدى قطع الأرض.</div>
+<div class="tip">كل ضغطة على قطعة الأرض تختارها للعمل عليها. النمو يستغرق وقتًا حقيقيًا.</div>
+</main></div>
+<script>
+let money=100,hay=0,acres=1,selected=0,plots=[{state:'empty',water:0,readyAt:0}],waterLevel=0,irrigation=1;
+const $=id=>document.getElementById(id);
+function save(){localStorage.cloverGame=JSON.stringify({money,hay,acres,plots,irrigation})}
+function load(){try{let x=JSON.parse(localStorage.cloverGame);if(x){({money,hay,acres,plots,irrigation}=x)}}catch(e){}}
+function msg(t){$('log').textContent=t}
+function render(){
+$('money').textContent=Math.floor(money);$('hay').textContent=hay;$('acres').textContent=acres;
+$('landPrice').textContent=150+(acres-1)*100;
+let now=Date.now();plots.forEach(p=>{if(p.state==='growing'&&now>=p.readyAt&&p.water>0)p.state='ready'});
+$('field').innerHTML=plots.map((p,i)=>`<div class="plot ${p.state}" onclick="selectPlot(${i})">${p.state==='empty'?'🟫':p.state==='growing'?'🌱':'🌿'}<small>${i===selected?'محددة ':''}${p.state==='empty'?'فارغة':p.state==='growing'?'تنمو':'جاهزة للحصاد'}</small></div>`).join('');
+$('plant').disabled=plots[selected].state!=='empty';$('water').disabled=plots[selected].state!=='growing';$('harvest').disabled=plots[selected].state!=='ready';
+}
+function selectPlot(i){selected=i;render();msg('تم اختيار قطعة الأرض رقم '+(i+1))}
+$('plant').onclick=()=>{let p=plots[selected];if(p.state!=='empty')return;p.state='growing';p.water=0;p.readyAt=Date.now()+12000/irrigation;msg('🌱 تمت زراعة البرسيم. اسقِ الأرض الآن 💧');render();save()}
+$('water').onclick=()=>{let p=plots[selected];if(p.state!=='growing')return;p.water++;p.readyAt-=3000/irrigation;msg('💧 تم ري البرسيم. اقترب موعد الحصاد!');render();save()}
+$('harvest').onclick=()=>{let p=plots[selected];if(p.state!=='ready')return;hay+=10;p.state='empty';p.water=0;p.readyAt=0;msg('✂️ حصاد ممتاز! حصلت على 10 وحدات برسيم.');render();save()}
+$('sell').onclick=()=>{if(hay<1){msg('لا يوجد برسيم للبيع.');return}let earned=hay*12;money+=earned;msg('💰 بعت '+hay+' وحدات برسيم مقابل '+earned+' جنيه.');hay=0;render();save()}
+$('buy').onclick=()=>{let price=150+(acres-1)*100;if(money<price){msg('💸 فلوسك لا تكفي لشراء فدان جديد.');return}money-=price;acres++;plots.push({state:'empty',water:0,readyAt:0});msg('🚜 مبروك! اشتريت فدانًا جديدًا.');render();save()}
+$('upgrade').onclick=()=>{if(money<250){msg('💸 تحتاج 250 جنيه لترقية الري.');return}money-=250;irrigation++;msg('💦 تمت ترقية الري! البرسيم ينمو أسرع الآن.');render();save()}
+load();if(!plots.length)plots=[{state:'empty',water:0,readyAt:0}];setInterval(()=>{render();save()},1000);render();
+</script></body></html>
